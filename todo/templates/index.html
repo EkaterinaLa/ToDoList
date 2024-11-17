@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To Do List</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+        display: flex; /* Используем Flexbox для размещения колонок */
+        justify-content: space-between; /* Размещаем колонки с равными отступами */
+        margin-top: 20px; /* Отступ сверху для отделения от заголовка */
+    }
+
+    .column {
+        flex: 1; /* Каждая колонка занимает равное пространство */
+        margin: 0 10px; /* Отступы между колонками */
+        padding: 20px;
+        border: 1px solid #ccc; /* Граница для визуального отделения колонок */
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Легкая тень */
+    }
+    .todoButton {
+        background: #9ACD32;
+        border: none;
+        padding: 7px 7px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        border-radius: 30%;
+    }
+    .todoButton:hover{
+        opacity: 0.8;
+    }
+    .todoButton:active{
+        transform: scale(0.95);
+    }
+    .delete_button:hover{
+        opacity: 0.8;
+    }
+    input[type="text"]:focus{
+        box-shadow: inset 0 0 0 2px rgba(0,0,0,.2);
+        background: #eaeaea;
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0,0,0);
+        background-color: rgba(0,0,0,0.4);
+        padding-top: 60px;
+    }
+    .modal_content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 40%;
+    }
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .task_input{
+        width:  350px;
+        height: 10px;
+        padding: 5px 10px 5px 10px;
+    }
+    .done_deals{
+        padding-top: 10px;
+    }
+</style>
+<body>
+    <h1 style="padding-left: 620px; font-family: 'Georgia', serif, cursive">To Do List</h1>
+    <div class="container">
+        <div class="column">
+            <h2 style="font-family: 'Georgia', serif, cursive">добавить новую задачу</h2>
+            <form action = "/add" method = "GET">
+                <input type = "text" name = "text" class="task_input" placeholder = "введите новую задачу">
+                <button type = "submit">Add task</button>
+            </form>
+            <h2 style="font-family:'Georgia', serif, cursive">список дел</h2>
+            <table>
+                {% for t in Title%}
+                <tr>
+                    {%if t[2] == 0%}
+                    <td>
+                        <form action="/put/to/done/{{t[1]}}" style="display:inline;">
+                            <button class="todoButton" type="submit"></button>
+                        </form>
+                        {{t[1]}} (<button type="button" onclick="open_modal('{{t[1]}}')">редактировать</button> |
+                        <form action="{{ url_for('delete_task', Title_id=t[0]) }}" method="post" style="display:inline;">
+                            <button type="submit" class="delete_button" onclick="return confirm('Вы уверены, что хотите удалить эту задачу?');">удалить</button>)
+                        </form>
+
+                    </td>
+                    {%endif%}
+                </tr>
+                {%endfor%}
+            </table>
+        </div>
+        <div class="column">
+            <h2 style="font-family:'Georgia', serif, cursive">выполненные дела</h2>
+            <table>
+                {% for t in Title%}
+                <tr>
+                    {% if t[2] == 1%}
+                    <td> {{t[1]}}
+                    </td>
+                    {%endif%}
+                </tr>
+                {%endfor%}
+            </table>
+        </div>
+    </div>
+    <div id="edit_modal" class="modal" style="display:none;">
+        <div class="modal_content">
+            <span class="close" onclick="close_modal()">&times;</span>
+            <h2 class="edit_title" style="font-family:'Georgia', serif, cursive">Редактирование задачи</h2>
+            <form id="edit_form" method="POST">
+                <input type="text" name="task" id="task_input" class="task_input" placeholder="введите новую задачу" required/>
+                <button type="submit">Сохранить</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function open_modal(title) {
+        document.getElementById('edit_modal').style.display = "block";
+        document.getElementById('task_input').value = title;
+        document.getElementById('edit_form').onsubmit = function(event) {
+            event.preventDefault();
+            const updatedTask = document.getElementById('task_input').value;
+            $.ajax({
+                url: '/update/task/' + encodeURIComponent(title),
+                method: 'POST',
+                data: { task: updatedTask },
+                success: function() {
+                    close_modal();
+                    location.reload();
+                }
+            });
+        };
+    }
+    function close_modal() {
+        document.getElementById('edit_modal').style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('edit_modal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+    </script>
+</body>
+</html>
